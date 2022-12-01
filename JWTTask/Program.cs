@@ -7,6 +7,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 // Add services to the container.
 
@@ -15,6 +16,15 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+//CORS Section
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+                      policy =>
+                      {
+                          policy.WithOrigins("*").AllowAnyMethod().AllowAnyHeader();
+                      });
+});
 
 
 //Authentication Section
@@ -61,6 +71,18 @@ builder.Services.AddAuthentication()
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("superSecretKey@2"))
         };
     })
+    .AddJwtBearer("UsingCORS", options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateIssuerSigningKey = true,
+            //ValidIssuer = "https://localhost:44304/",
+            //ValidAudience = "https://localhost:44304/",
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("superSecretKey@2"))
+        };
+    })
     .AddPolicyScheme("MultiAuthSchemes", JwtBearerDefaults.AuthenticationScheme, options =>
     {
         options.ForwardDefaultSelector = context =>
@@ -70,7 +92,7 @@ builder.Services.AddAuthentication()
             {
                 var token = authorization.Substring("Bearer ".Length).Trim();
                 var jwtHandler = new JwtSecurityTokenHandler();
-                return (jwtHandler.CanReadToken(token) && jwtHandler.ReadJwtToken(token).Issuer.Equals("https://localhost:7208/"))
+                return (jwtHandler.CanReadToken(token) && jwtHandler.ReadJwtToken(token).Issuer.Equals("https://localhost:44304/"))
                     ? JwtBearerDefaults.AuthenticationScheme : "SecondJwtScheme";
             }
             return CookieAuthenticationDefaults.AuthenticationScheme;
@@ -97,6 +119,12 @@ builder.Services.AddAuthorization(options =>
         .RequireAuthenticatedUser()
         .Build());
 
+    var withCorsJwtSchemePolicyBuilder = new AuthorizationPolicyBuilder("UsingCORS");
+    options.AddPolicy("UsingCORS", withCorsJwtSchemePolicyBuilder
+        .RequireAuthenticatedUser()
+        .Build());
+
+
     var onlyCookieSchemePolicyBuilder = new AuthorizationPolicyBuilder(CookieAuthenticationDefaults.AuthenticationScheme);
     options.AddPolicy("OnlyCookieScheme", onlyCookieSchemePolicyBuilder
         .RequireAuthenticatedUser()
@@ -115,6 +143,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+//CORS
+
+app.UseCors(MyAllowSpecificOrigins);
 
 app.UseAuthentication();
 app.UseAuthorization();

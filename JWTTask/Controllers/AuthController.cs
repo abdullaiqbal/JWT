@@ -55,6 +55,28 @@ namespace JWTTask.Controllers
         }
 
 
+
+        [HttpPost("loginUsingCors")]
+        public IActionResult LoginUsingCors([FromBody] User user)
+        {
+            var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("superSecretKey@2"));
+            var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
+
+            var tokenOptions = new JwtSecurityToken(
+                //issuer: "https://localhost:44304/",
+                //audience: "https://localhost:44304/",
+                claims: new List<Claim>() { new Claim(ClaimTypes.Name, user.Username ?? string.Empty) },
+                expires: DateTime.Now.AddMinutes(30),
+                signingCredentials: signinCredentials
+            );
+
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(tokenOptions);
+
+            return Ok(new { Token = tokenString });
+        }
+
+
+
         [HttpPost("loginCookie")]
         public async Task<IActionResult> LoginCookie([FromBody] User user)
         {

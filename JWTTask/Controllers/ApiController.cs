@@ -24,6 +24,15 @@ namespace JWTTask.Controllers
             return Ok(new { Message = $"Hello {GetUsername()} with Second JWT" });
         }
 
+
+        [Authorize(Policy = "UsingCORS")]
+        [HttpGet("getUsingCORSJwt")]
+        public IActionResult GetUsingCORSJwt()
+        {
+            return Ok(new { Message = $"Hello {GetUsername()} with using CORS" });
+        }
+
+
         [Authorize(Policy = "OnlyCookieScheme")]
         [HttpGet("getWithCookie")]
         public IActionResult GetWithCookie()
@@ -40,7 +49,7 @@ namespace JWTTask.Controllers
         [HttpGet("getWithMultiple")]
         public IActionResult GetWithMultiple()
         {
-            return Ok(new { Message = $"Hello {GetUsername()}" });
+            return Ok(new { Message = $"Hello {GetUsername()} with multiple" });
         }
 
         private string? GetUsername()
