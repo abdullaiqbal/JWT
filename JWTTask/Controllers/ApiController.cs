@@ -50,5 +50,6 @@ namespace JWTTask.Controllers
                 .Select(x => x.Value)
                 .FirstOrDefault();
         }
+        // GitHub
     }
 }
